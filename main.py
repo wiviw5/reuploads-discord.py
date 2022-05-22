@@ -1,40 +1,11 @@
 import io
 import discord
 from discord import app_commands
-from datetime import datetime
-import os
-import httpx
+from utils import getTime, getBotKey, checkAndSetupConfigFile, getMainGuildID, getDefaultChannelID, getDeletePermsRoleID, getViewPermsRoleID, getAdminPermsRoleID, getOwnerID
+from filesutils import getBytesOfURL, checkFileSize, getFileSize, getFileName
 
-
-def getKeyFile():
-    keyFile = "botkey.txt"
-    if not os.path.exists(keyFile):
-        file = open(keyFile, "w")
-        botKey = "Enter Your bot key here"
-        file.write(botKey)
-        print("Please Update the bot key")
-        exit()
-    else:
-        file = open(keyFile, "r")
-        botKey = file.readline()
-        return botKey
-
-
-def getTime():
-    now = datetime.now()
-    currentTime = now.strftime("%m/%d/%y | %H:%M:%S")
-    return currentTime
-
-
-async def getBytesOfURL(url):
-    async with httpx.AsyncClient() as client:
-        r = await client.get(url)
-        return r
-
-
-# Returns true if the size of the file is under discords upload threshold for default servers
-def checkFileSize(Bytes):
-    return len(Bytes.content) <= 8388608
+# Complete Startup Steps
+checkAndSetupConfigFile()
 
 
 class client(discord.Client):
@@ -45,175 +16,135 @@ class client(discord.Client):
     async def on_ready(self):
         await self.wait_until_ready()
         if not self.synced:  # check if slash commands have been synced
-            await tree.sync(guild=discord.Object(id=testServerID))
+            await tree.sync(guild=discord.Object(id=serverID))
             self.synced = True
         print('Started at: ' + getTime())
 
 
 bot = client()
 tree = app_commands.CommandTree(bot)
-testServerID = 964780178201010226
-verifiedUsers = [614557040102342677, 964776764037550100]
-defaultChannelID = 964792135087951872
-magicNumbers = {'.png': bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
-                '.jpg': bytes([0xFF, 0xD8, 0xFF, 0xE1]),
-                'jpg': bytes([0xFF, 0xD8, 0xFF, 0xE0]),
-                '.gif': bytes([0x47, 0x49, 0x46, 0x38]),
-                '.webp': bytes([0x52, 0x49, 0x46, 0x46]),
-                '.mp4': bytes([0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70]),
-                'mp4': bytes([0x00, 0x00, 0x00, 0x1c, 0x66, 0x74, 0x79, 0x70]),
-                '.mov': bytes([0x00, 0x00, 0x00, 0x14, 0x66, 0x74, 0x79, 0x70]),
-                }
+serverID = int(getMainGuildID())
+defaultChannelID = int(getDefaultChannelID())
+deletePermsRoleID = int(getDeletePermsRoleID())
+viewPermsRoleID = int(getViewPermsRoleID())
+adminPermsRoleID = int(getAdminPermsRoleID())
+ownerID = int(getOwnerID())
 
 
 def getDefaultChannel():
-    return bot.get_channel(defaultChannelID)
+    return bot.get_channel(int(defaultChannelID))
 
 
-def getFileName(filename, RB, spoiler):
-    if spoiler:
-        return f"SPOILER_{filename}{getFileExtensionType(RB.content)}"
-    else:
-        return f"{filename}{getFileExtensionType(RB.content)}"
+def getAttemptedUploadMessage(filename, url):
+    return f"Attempted Upload of `{filename}` at `{getTime()}` \n{url}"
 
 
-def getFileExtensionType(fileBytes):
-    for ext in magicNumbers:
-        if fileBytes.startswith(magicNumbers[ext]):
-            if ext == "jpg":
-                ext = ".jpg"
-            if ext == "mp4":
-                ext = ".mp4"
-            return ext
+def getAttemptedUploadMessageWithSource(filename, url, source):
+    return f"Attempted Upload of `{filename}` at `{getTime()}` \n{url}\nSource: `{source}`"
 
 
-def checkUser(checkId):
-    for id in verifiedUsers:
-        return checkId == id
+def getSuccessfulUploadMessage(returnedBytes):
+    return f"Completed File Download Successfully at {getTime()}, Uploading {getFileSize(returnedBytes.content)} of content."
 
 
-def translateBytesIntoKB(incomingBytes):
-    return incomingBytes / 1024
+def getUnsuccessfulUploadMessage(returnedBytes):
+    return f"Completed File Download Successfully at {getTime()}, Unable to upload {getFileSize(returnedBytes.content)} of content."
 
 
-def translateBytesIntoMB(incomingBytes):
-    return incomingBytes / 1048576
-
-
-def getFileSize(RB):
-    ByteValue = len(RB)
-    if ByteValue <= 1024:
-        return f"{ByteValue} Bytes"
-    elif ByteValue <= 1048576:
-        return f"{'%.2f' % translateBytesIntoKB(ByteValue)} KB"
-    else:
-        return f"{'%.2f' % translateBytesIntoMB(ByteValue)} MB"
-
-
-@tree.command(guild=discord.Object(id=testServerID), name='createchannel', description='Creates a Channel')
-@app_commands.describe(catergory='The catergory to create it in.')
+@tree.command(guild=discord.Object(id=serverID), name='createchannel', description='Creates a Channel')
+@app_commands.describe(category='The category to create it in.')
 @app_commands.describe(channelname='Name of the channel to be made')
-async def slash1(interaction: discord.Interaction, catergory: discord.CategoryChannel, channelname: str):
-    if checkUser(interaction.user.id):
-        await catergory.create_text_channel(channelname)
-        for channel in catergory.channels:
-            if channel.name == channelname:
-                id = channel.id
-        await interaction.response.send_message(f"Created <#{id}> at {getTime()}", ephemeral=True)  # ephemeral means "locally" sent to client.
+async def createchannel(interaction: discord.Interaction, category: discord.CategoryChannel, channelname: str):
+    if ownerID == interaction.user.id:
+        channel = await category.create_text_channel(channelname)
+        await interaction.response.send_message(f"Created <#{channel.id}> at {getTime()}", ephemeral=True)  # ephemeral means "locally" sent to client.
     else:
-        await interaction.response.send_message(f"You do not have the proper perms for this bot.")
+        await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
 
 
-@tree.command(guild=discord.Object(id=testServerID), name='changeperms', description='Enables and Disables Certain Perms')
+@tree.command(guild=discord.Object(id=serverID), name='changeperms', description='Enables and Disables Certain Perms')
 @app_commands.describe(deleteperms='Delete Perms On/OFF')
 @app_commands.describe(viewperms='View Perms On/OFF')
 @app_commands.describe(adminperms='Admin Perms On/OFF')
-async def slash1(interaction: discord.Interaction, deleteperms: bool = False, viewperms: bool = False, adminperms: bool = False):
-    if checkUser(interaction.user.id):
+async def changeperms(interaction: discord.Interaction, deleteperms: bool = False, viewperms: bool = False, adminperms: bool = False):
+    if ownerID == interaction.user.id:
         await interaction.response.send_message(f"Roles updated at {getTime()}", ephemeral=True)
+        DPRID = interaction.guild.get_role(deletePermsRoleID)
+        VPRID = interaction.guild.get_role(viewPermsRoleID)
+        APRID = interaction.guild.get_role(adminPermsRoleID)
         if deleteperms:
-            await interaction.user.add_roles(interaction.guild.get_role(977645698306695198))
+            await interaction.user.add_roles(DPRID)
         else:
-            await interaction.user.remove_roles(interaction.guild.get_role(977645698306695198))
+            await interaction.user.remove_roles(DPRID)
         if viewperms:
-            await interaction.user.add_roles(interaction.guild.get_role(977645908776874096))
+            await interaction.user.add_roles(VPRID)
         else:
-            await interaction.user.remove_roles(interaction.guild.get_role(977645908776874096))
+            await interaction.user.remove_roles(VPRID)
         if adminperms:
-            await interaction.user.add_roles(interaction.guild.get_role(977651225380151328))
+            await interaction.user.add_roles(APRID)
         else:
-            await interaction.user.remove_roles(interaction.guild.get_role(977651225380151328))
+            await interaction.user.remove_roles(APRID)
     else:
-        await interaction.response.send_message(f"You do not have the proper perms for this bot.")
+        await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
 
 
-@tree.command(guild=discord.Object(id=testServerID), name='upload', description='Upload Files')  # guild specific slash command
+@tree.command(guild=discord.Object(id=serverID), name='upload', description='Upload Files')  # guild specific slash command
 @app_commands.describe(channel='The channel to Send it in.')
 @app_commands.describe(filename='Name of the File')
 @app_commands.describe(url='Url of the Image')
 @app_commands.describe(source='Url of the Source')
-async def slash1(interaction: discord.Interaction, url: str, filename: str, spoiler: bool = False, channel: discord.TextChannel = None, source: str = None):
-    if checkUser(interaction.user.id):
-        returnedBytes = await getBytesOfURL(url)
-        if channel is None:
-            channel = getDefaultChannel()
-        if source is None:
-            if checkFileSize(returnedBytes):
-                await interaction.response.send_message(f"Completed File Download Successfully at {getTime()}, Uploading {getFileSize(returnedBytes.content)} of content.", ephemeral=True)  # ephemeral means "locally" sent to client.
-                await channel.send(f"Uploaded `{filename}` at `{getTime()}` \n`{url}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(filename, returnedBytes, spoiler)))
-            else:
-                await interaction.response.send_message(f"Completed File Download Successfully at {getTime()}, Unable to upload {getFileSize(returnedBytes.content)} of content.", ephemeral=True)
-                await channel.send(f"Attempted Upload of `{filename}` at `{getTime()}` \n{url}")
+async def upload(interaction: discord.Interaction, url: str, filename: str, spoiler: bool = False, channel: discord.TextChannel = None, source: str = None):
+    returnedBytes = await getBytesOfURL(url)
+    if channel is None:
+        channel = getDefaultChannel()
+    if source is None:
+        if checkFileSize(returnedBytes):
+            await interaction.response.send_message(getSuccessfulUploadMessage(returnedBytes), ephemeral=True)  # ephemeral means "locally" sent to client.
+            await channel.send(f"Uploaded `{filename}` at `{getTime()}` \n`{url}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(filename, returnedBytes, spoiler, url)))
         else:
-            if checkFileSize(returnedBytes):
-                await interaction.response.send_message(f"Completed File Download Successfully at {getTime()}, Uploading {getFileSize(returnedBytes.content)} of content.", ephemeral=True)  # ephemeral means "locally" sent to client.
-                await channel.send(f"Uploaded `{filename}` at `{getTime()}` \n`{url}`\nSource: `{source}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(filename, returnedBytes, spoiler)))
-            else:
-                await interaction.response.send_message(f"Completed File Download Successfully at {getTime()}, Unable to upload {getFileSize(returnedBytes.content)} of content.", ephemeral=True)
-                await channel.send(f"Attempted Upload of `{filename}` at `{getTime()}` \n{url}\nSource: `{source}`")
-
+            await interaction.response.send_message(getUnsuccessfulUploadMessage(returnedBytes), ephemeral=True)
+            await channel.send(getAttemptedUploadMessage(filename, url))
     else:
-        await interaction.response.send_message(f"You do not have the proper perms for this bot.")
+        if checkFileSize(returnedBytes):
+            await interaction.response.send_message(getSuccessfulUploadMessage(returnedBytes), ephemeral=True)  # ephemeral means "locally" sent to client.
+            await channel.send(f"Uploaded `{filename}` at `{getTime()}` \n`{url}`\nSource: `{source}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(filename, returnedBytes, spoiler, url)))
+        else:
+            await interaction.response.send_message(getUnsuccessfulUploadMessage(returnedBytes), ephemeral=True)
+            await channel.send(getAttemptedUploadMessageWithSource(filename, url, source))
 
 
-@tree.command(guild=discord.Object(id=testServerID), name='avatar', description='Uploads Avatars')  # guild specific slash command
+@tree.command(guild=discord.Object(id=serverID), name='avatar', description='Uploads Avatars')  # guild specific slash command
 @app_commands.describe(channel='The channel to Send it in.')
 @app_commands.describe(userid='ID of the User')
-async def slash1(interaction: discord.Interaction, userid: str, spoiler: bool = False, channel: discord.TextChannel = None):
-    if checkUser(interaction.user.id):
-        discUser = await client.fetch_user(bot, userid)
-        userAvatarURL = discUser.avatar.url
-        returnedBytes = await getBytesOfURL(userAvatarURL)
-        if channel is None:
-            channel = getDefaultChannel()
-        if checkFileSize(returnedBytes):
-            await interaction.response.send_message(f"Completed File Download Successfully at {getTime()}, Uploading {getFileSize(returnedBytes.content)} of content.", ephemeral=True)  # ephemeral means "locally" sent to client.
-            await channel.send(f"Uploaded `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n`{userAvatarURL}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(discUser.name, returnedBytes, spoiler)))
-        else:
-            await interaction.response.send_message(f"Completed File Download Successfully at {getTime()}, Unable to upload {getFileSize(returnedBytes.content)} of content.", ephemeral=True)
-            await channel.send(f"Attempted Upload of `{discUser.name}` at `{getTime()}` \n{userAvatarURL}")
+async def avatar(interaction: discord.Interaction, userid: str, spoiler: bool = False, channel: discord.TextChannel = None):
+    discUser = await client.fetch_user(bot, userid)
+    userAvatarURL = discUser.avatar.url
+    returnedBytes = await getBytesOfURL(userAvatarURL)
+    if channel is None:
+        channel = getDefaultChannel()
+    if checkFileSize(returnedBytes):
+        await interaction.response.send_message(getSuccessfulUploadMessage(returnedBytes), ephemeral=True)  # ephemeral means "locally" sent to client.
+        await channel.send(f"Uploaded `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n`{userAvatarURL}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(discUser.name, returnedBytes, spoiler, userAvatarURL)))
     else:
-        await interaction.response.send_message(f"You do not have the proper perms for this bot.")
+        await interaction.response.send_message(getUnsuccessfulUploadMessage(returnedBytes), ephemeral=True)
+        await channel.send((getAttemptedUploadMessage(discUser.name, userAvatarURL)))
 
 
-@tree.command(guild=discord.Object(id=testServerID), name='banner', description='Uploads Banners')  # guild specific slash command
+@tree.command(guild=discord.Object(id=serverID), name='banner', description='Uploads Banners')  # guild specific slash command
 @app_commands.describe(channel='The channel to Send it in.')
 @app_commands.describe(userid='ID of the User')
-async def slash1(interaction: discord.Interaction, userid: str, spoiler: bool = False, channel: discord.TextChannel = None):
-    if checkUser(interaction.user.id):
-        discUser = await client.fetch_user(bot, userid)
-        userBannerURL = discUser.banner.url
-        returnedBytes = await getBytesOfURL(userBannerURL)
-        if channel is None:
-            channel = getDefaultChannel()
-        if checkFileSize(returnedBytes):
-            await interaction.response.send_message(f"Completed File Download Successfully at {getTime()}, Uploading {getFileSize(returnedBytes.content)} of content.", ephemeral=True)  # ephemeral means "locally" sent to client.
-            await channel.send(f"Uploaded `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n`{userBannerURL}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(discUser.name, returnedBytes, spoiler)))
-        else:
-            await interaction.response.send_message(f"Completed File Download Successfully at {getTime()}, Unable to upload {getFileSize(returnedBytes.content)} of content.", ephemeral=True)
-            await channel.send(f"Attempted Upload of `{discUser.name}` at `{getTime()}` \n{userBannerURL}")
+async def banner(interaction: discord.Interaction, userid: str, spoiler: bool = False, channel: discord.TextChannel = None):
+    discUser = await client.fetch_user(bot, userid)
+    userBannerURL = discUser.banner.url
+    returnedBytes = await getBytesOfURL(userBannerURL)
+    if channel is None:
+        channel = getDefaultChannel()
+    if checkFileSize(returnedBytes):
+        await interaction.response.send_message(getSuccessfulUploadMessage(returnedBytes), ephemeral=True)  # ephemeral means "locally" sent to client.
+        await channel.send(f"Uploaded `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n`{userBannerURL}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(discUser.name, returnedBytes, spoiler, userBannerURL)))
     else:
-        await interaction.response.send_message(f"You do not have the proper perms for this bot.")
+        await interaction.response.send_message(getUnsuccessfulUploadMessage(returnedBytes), ephemeral=True)
+        await channel.send((getAttemptedUploadMessage(discUser.name, userBannerURL)))
 
 
-bot.run(getKeyFile())
+bot.run(getBotKey())
