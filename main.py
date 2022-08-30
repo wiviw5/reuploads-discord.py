@@ -147,4 +147,18 @@ async def banner(interaction: discord.Interaction, userid: str, spoiler: bool = 
         await channel.send((getAttemptedUploadMessage(discUser.name, userBannerURL)))
 
 
+@tree.command(guild=discord.Object(id=serverID), name='user', description='Replies with user features')  # guild specific slash command
+@app_commands.describe(userid='ID of the User')
+@app_commands.describe(banner='If the banner should be included as well.')
+async def banner(interaction: discord.Interaction, userid: str, banner: bool = None):
+    discUser = await client.fetch_user(bot, userid)
+    if banner is True:
+        userAvatarURL = discUser.avatar.url
+        userBannerURL = discUser.banner.url
+        await interaction.response.send_message(f"Showing Profile: `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n{userAvatarURL}\n {userBannerURL}", ephemeral=True)  # ephemeral means "locally" sent to client.
+    else:
+        userAvatarURL = discUser.avatar.url
+        await interaction.response.send_message(f"Showing Profile: `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n{userAvatarURL}", ephemeral=True)  # ephemeral means "locally" sent to client.
+
+
 bot.run(getBotKey())
