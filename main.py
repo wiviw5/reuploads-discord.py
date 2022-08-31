@@ -147,7 +147,7 @@ async def banner(interaction: discord.Interaction, userid: str, spoiler: bool = 
         await channel.send((getAttemptedUploadMessage(discUser.name, userBannerURL)))
 
 
-@tree.command(guild=discord.Object(id=serverID), name='user', description='Replies with user features')  # guild specific slash command
+@tree.command(guild=discord.Object(id=serverID), name='info', description='Replies with info on the users features')  # guild specific slash command
 @app_commands.describe(userid='ID of the User')
 @app_commands.describe(banner='If the banner should be included as well.')
 async def banner(interaction: discord.Interaction, userid: str, banner: bool = None):
