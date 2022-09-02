@@ -1,4 +1,5 @@
 import httpx
+import hashlib
 
 
 def getFileExtensionType(fileBytes, url):
@@ -57,6 +58,17 @@ def getFileSize(RB):
         return f"{'%.2f' % translateBytesIntoKB(ByteValue)} KB"
     else:
         return f"{'%.2f' % translateBytesIntoMB(ByteValue)} MB"
+
+
+def adjustPictureSizeDiscord(url, requestedSize):
+    cleanedURL = url.split("?")[0]
+    return cleanedURL + "?size=" + str(requestedSize)
+
+
+def getHashOfBytes(incomingBytes):
+    h = hashlib.sha256()
+    h.update(incomingBytes)
+    return h.hexdigest()
 
 
 async def getBytesOfURL(url):

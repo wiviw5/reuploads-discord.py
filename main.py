@@ -2,7 +2,7 @@ import io
 import discord
 from discord import app_commands
 from utils import getTime, getBotKey, checkAndSetupConfigFile, getMainGuildID, getDefaultChannelID, getDeletePermsRoleID, getViewPermsRoleID, getAdminPermsRoleID, getOwnerID
-from filesutils import getBytesOfURL, checkFileSize, getFileSize, getFileName
+from filesutils import getBytesOfURL, checkFileSize, getFileSize, getFileName, adjustPictureSizeDiscord, getHashOfBytes
 
 # Complete Startup Steps
 checkAndSetupConfigFile()
@@ -100,14 +100,14 @@ async def upload(interaction: discord.Interaction, url: str, filename: str, spoi
     if source is None:
         if checkFileSize(returnedBytes):
             await interaction.response.send_message(getSuccessfulUploadMessage(returnedBytes), ephemeral=True)  # ephemeral means "locally" sent to client.
-            await channel.send(f"Uploaded `{filename}` at `{getTime()}` \n`{url}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(filename, returnedBytes, spoiler, url)))
+            await channel.send(f"Uploaded `{filename}` at `{getTime()}` \n`{url}`\nHash: `{getHashOfBytes(returnedBytes.content)}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(filename, returnedBytes, spoiler, url)))
         else:
             await interaction.response.send_message(getUnsuccessfulUploadMessage(returnedBytes), ephemeral=True)
             await channel.send(getAttemptedUploadMessage(filename, url))
     else:
         if checkFileSize(returnedBytes):
             await interaction.response.send_message(getSuccessfulUploadMessage(returnedBytes), ephemeral=True)  # ephemeral means "locally" sent to client.
-            await channel.send(f"Uploaded `{filename}` at `{getTime()}` \n`{url}`\nSource: `{source}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(filename, returnedBytes, spoiler, url)))
+            await channel.send(f"Uploaded `{filename}` at `{getTime()}` \n`{url}`\nSource: `{source}`\nHash: `{getHashOfBytes(returnedBytes.content)}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(filename, returnedBytes, spoiler, url)))
         else:
             await interaction.response.send_message(getUnsuccessfulUploadMessage(returnedBytes), ephemeral=True)
             await channel.send(getAttemptedUploadMessageWithSource(filename, url, source))
@@ -124,7 +124,7 @@ async def avatar(interaction: discord.Interaction, userid: str, spoiler: bool = 
         channel = getDefaultChannel()
     if checkFileSize(returnedBytes):
         await interaction.response.send_message(getSuccessfulUploadMessage(returnedBytes), ephemeral=True)  # ephemeral means "locally" sent to client.
-        await channel.send(f"Uploaded `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n`{userAvatarURL}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(discUser.name, returnedBytes, spoiler, userAvatarURL)))
+        await channel.send(f"Uploaded `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n`{userAvatarURL}`\nHash: `{getHashOfBytes(returnedBytes.content)}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(discUser.name, returnedBytes, spoiler, userAvatarURL)))
     else:
         await interaction.response.send_message(getUnsuccessfulUploadMessage(returnedBytes), ephemeral=True)
         await channel.send((getAttemptedUploadMessage(discUser.name, userAvatarURL)))
@@ -135,13 +135,13 @@ async def avatar(interaction: discord.Interaction, userid: str, spoiler: bool = 
 @app_commands.describe(userid='ID of the User')
 async def banner(interaction: discord.Interaction, userid: str, spoiler: bool = False, channel: discord.TextChannel = None):
     discUser = await client.fetch_user(bot, userid)
-    userBannerURL = discUser.banner.url
+    userBannerURL = adjustPictureSizeDiscord(discUser.banner.url, 1024)
     returnedBytes = await getBytesOfURL(userBannerURL)
     if channel is None:
         channel = getDefaultChannel()
     if checkFileSize(returnedBytes):
         await interaction.response.send_message(getSuccessfulUploadMessage(returnedBytes), ephemeral=True)  # ephemeral means "locally" sent to client.
-        await channel.send(f"Uploaded `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n`{userBannerURL}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(discUser.name, returnedBytes, spoiler, userBannerURL)))
+        await channel.send(f"Uploaded `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n`{userBannerURL}`\nHash: `{getHashOfBytes(returnedBytes.content)}`", file=discord.File(io.BytesIO(returnedBytes.content), filename=getFileName(discUser.name, returnedBytes, spoiler, userBannerURL)))
     else:
         await interaction.response.send_message(getUnsuccessfulUploadMessage(returnedBytes), ephemeral=True)
         await channel.send((getAttemptedUploadMessage(discUser.name, userBannerURL)))
@@ -149,16 +149,17 @@ async def banner(interaction: discord.Interaction, userid: str, spoiler: bool = 
 
 @tree.command(guild=discord.Object(id=serverID), name='info', description='Replies with info on the users features')  # guild specific slash command
 @app_commands.describe(userid='ID of the User')
-@app_commands.describe(banner='If the banner should be included as well.')
-async def banner(interaction: discord.Interaction, userid: str, banner: bool = None):
+async def banner(interaction: discord.Interaction, userid: str):
     discUser = await client.fetch_user(bot, userid)
-    if banner is True:
-        userAvatarURL = discUser.avatar.url
-        userBannerURL = discUser.banner.url
-        await interaction.response.send_message(f"Showing Profile: `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n{userAvatarURL}\n {userBannerURL}", ephemeral=True)  # ephemeral means "locally" sent to client.
-    else:
+    banner = discUser.banner
+    if banner is None:
         userAvatarURL = discUser.avatar.url
         await interaction.response.send_message(f"Showing Profile: `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n{userAvatarURL}", ephemeral=True)  # ephemeral means "locally" sent to client.
+    else:
+        userAvatarURL = discUser.avatar.url
+        userBannerURL = adjustPictureSizeDiscord(discUser.banner.url, 1024)
+
+        await interaction.response.send_message(f"Showing Profile: `{discUser.name}` | `{discUser.id}` | <@{discUser.id}> at `{getTime()}` \n{userAvatarURL}\n {userBannerURL}", ephemeral=True)  # ephemeral means "locally" sent to client.
 
 
 bot.run(getBotKey())
