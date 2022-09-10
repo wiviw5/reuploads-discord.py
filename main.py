@@ -190,13 +190,13 @@ async def sendFile(url, filename, channel, spoiler, source):
         fileToSend = discord.File(io.BytesIO(returnedBytes.content), filename=finalFileName)
         if channel is None:
             channel = getDefaultChannel()
-        await channel.send(f"{source}\nOrigin URL: `{url}`\nHash: `{getHashOfBytes(returnedBytes.content)}` ", file=fileToSend)
+        await channel.send(f"{source}\nOrigin URL: `{url}`\nHash: `{getHashOfBytes(returnedBytes.content)}` Size: `{getFileSize(returnedBytes.content)}`", file=fileToSend)
     else:
         if channel is None:
             channel = getDefaultChannel()
         if not source.startswith("Uploaded "):
             source = f"Failed Uploading file at: {url}\n + {source}"
-        await channel.send(f"{source}\nOrigin URL: `{url}`\nHash: `{getHashOfBytes(returnedBytes.content)}` ")
+        await channel.send(f"{source}\nOrigin URL: `{url}`\nHash: `{getHashOfBytes(returnedBytes.content)}` Size: `{getFileSize(returnedBytes.content)}`")
 
 
 bot.run(getBotKey())
