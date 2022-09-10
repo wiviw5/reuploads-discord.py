@@ -50,6 +50,11 @@ def getFileName(filename, RB, spoiler, url):
         return f"{filename}{getFileExtensionType(RB.content, url)}"
 
 
+def getBasicFileName(filename, url):
+    extension = url.split(".")[-1]
+    return f"{filename}.{extension}"
+
+
 def getFileSize(RB):
     ByteValue = len(RB)
     if ByteValue <= 1024:
