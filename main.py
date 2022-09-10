@@ -28,11 +28,15 @@ defaultChannelID = int(getDefaultChannelID())
 deletePermsRoleID = int(getDeletePermsRoleID())
 viewPermsRoleID = int(getViewPermsRoleID())
 adminPermsRoleID = int(getAdminPermsRoleID())
+updatedDefaultChannel = None
 ownerID = int(getOwnerID())
 
 
 def getDefaultChannel():
-    return bot.get_channel(int(defaultChannelID))
+    if updatedDefaultChannel is None:
+        return bot.get_channel(int(defaultChannelID))
+    else:
+        return bot.get_channel(int(updatedDefaultChannel))
 
 
 @tree.command(guild=discord.Object(id=serverID), name='createchannel', description='Creates a Channel')
@@ -68,6 +72,17 @@ async def changeperms(interaction: discord.Interaction, deleteperms: bool = Fals
             await interaction.user.add_roles(APRID)
         else:
             await interaction.user.remove_roles(APRID)
+    else:
+        await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
+
+
+@tree.command(guild=discord.Object(id=serverID), name='updatechannel', description='Updates the default channel temporarily until bot restarts.')
+@app_commands.describe(channel='The channel to be chosen for things to be default sent too.')
+async def updatechannel(interaction: discord.Interaction, channel: discord.TextChannel):
+    if ownerID == interaction.user.id:
+        global updatedDefaultChannel
+        updatedDefaultChannel = channel.id
+        await interaction.response.send_message(f"Updated default channel to <#{channel.id}> at {getTime()}", ephemeral=True)  # ephemeral means "locally" sent to client.
     else:
         await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
 
