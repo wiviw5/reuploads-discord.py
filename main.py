@@ -108,9 +108,12 @@ async def upload(interaction: discord.Interaction, url: str, filename: str, chan
 @app_commands.describe(source='Sources which may include any text')
 async def avatar(interaction: discord.Interaction, userid: str, channel: discord.TextChannel = None, spoiler: bool = False, source: str = None):
     try:
-        await client.fetch_user(bot, int(userid))
+        discUser = await client.fetch_user(bot, int(userid))
     except discord.NotFound:
         await interaction.response.send_message(f"User was not found for {userid} ", ephemeral=True)
+        return
+    if discUser.avatar is None:
+        await interaction.response.send_message(f"User has no avatar for `{discUser.id}`", ephemeral=True)
         return
     await interaction.response.send_message(f"Attempting upload of avatar for {userid} ", ephemeral=True)
     await sendAvatar(userID=userid, spoiler=spoiler, channel=channel, source=source)
@@ -142,8 +145,10 @@ async def info(interaction: discord.Interaction, userid: str):
     except discord.NotFound:
         await interaction.response.send_message(f"User was not found for {userid} ", ephemeral=True)
         return
-    banner = discUser.banner
-    if banner is None:
+    if discUser.avatar is None:
+        await interaction.response.send_message(f"User has no avatar for `{discUser.id}`", ephemeral=True)
+        return
+    if discUser.banner is None:
         userAvatarURL = discUser.avatar.url
         await interaction.response.send_message(f"Showing Avatar of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`\n{userAvatarURL}", ephemeral=True, view=infoAvatar(discUser.id))  # ephemeral means "locally" sent to client.
     else:
@@ -168,6 +173,13 @@ class infoAvatarAndBanner(discord.ui.View):
         await interaction.response.send_message(f'Sending Banner for {self.userID}', ephemeral=True)
         await sendBanner(userID=self.userID, channel=None, spoiler=False, source=None)
 
+    @discord.ui.button(label='Hash', style=discord.ButtonStyle.secondary)
+    async def hash(self, interaction: discord.Interaction, button: discord.ui.Button):
+        discUser = await client.fetch_user(bot, int(self.userID))
+        returnedBytesAvatar = await getBytesOfURL(discUser.avatar.url)
+        returnedBytesBanner = await getBytesOfURL(adjustPictureSizeDiscord(discUser.banner.url, 1024))
+        await interaction.response.send_message(f'Attached Hash for {self.userID}\nAvatar: `{getHashOfBytes(returnedBytesAvatar.content)}`\nBanner: `{getHashOfBytes(returnedBytesBanner.content)}`', ephemeral=True)
+
 
 class infoAvatar(discord.ui.View):
     def __init__(self, userID):
@@ -178,6 +190,12 @@ class infoAvatar(discord.ui.View):
     async def avatar(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(f'Sending Avatar {self.userID}', ephemeral=True)
         await sendAvatar(userID=self.userID, channel=None, spoiler=False, source=None)
+
+    @discord.ui.button(label='Hash', style=discord.ButtonStyle.secondary)
+    async def hash(self, interaction: discord.Interaction, button: discord.ui.Button):
+        discUser = await client.fetch_user(bot, int(self.userID))
+        returnedBytes = await getBytesOfURL(discUser.avatar.url)
+        await interaction.response.send_message(f'Attached Hash for {self.userID}\nAvatar: `{getHashOfBytes(returnedBytes.content)}`', ephemeral=True)
 
 
 async def sendAvatar(userID, channel, spoiler, source):
