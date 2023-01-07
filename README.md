@@ -4,4 +4,5 @@ A Personal Discord Bot that Uploads files to discord channels and is able to sav
 
 Config is generated on first run.
 
-TODO: Implement downloading gifs with https://developers.google.com/tenor/guides/quickstart / https://tenor.com/gifapi/documentation so downloading gifs isn't so terrible.
+TODO:
+Implement downloading gifs with https://developers.google.com/tenor/guides/quickstart / https://tenor.com/gifapi/documentation so downloading gifs isn't so terrible.
