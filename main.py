@@ -101,6 +101,19 @@ async def upload(interaction: discord.Interaction, url: str, filename: str, chan
     await sendFile(url=url, filename=filename, spoiler=spoiler, channel=channel, source=modifiedSource)
 
 
+@tree.command(guild=discord.Object(id=serverID), name='directupload', description='Directly replies & uploads Files')  # guild specific slash command
+@app_commands.describe(filename='Name of the File')
+@app_commands.describe(url='Url of the Image')
+@app_commands.describe(spoiler='Whether or not the image should be hidden')
+@app_commands.describe(source='Sources which may include any text')
+async def upload(interaction: discord.Interaction, url: str, filename: str, spoiler: bool = False, source: str = None):
+    modifiedSource = f"Uploaded file: `{getBasicFileName(filename, url)}`"
+    if source is not None:
+        modifiedSource = f"{modifiedSource}\n`{source}`"
+    await interaction.response.send_message(f"Attempting upload of url for {url} ", ephemeral=True)
+    await sendFile(url=url, filename=filename, spoiler=spoiler, source=modifiedSource, channel=interaction.channel)
+
+
 @tree.command(guild=discord.Object(id=serverID), name='avatar', description='Uploads Avatars')  # guild specific slash command
 @app_commands.describe(channel='The channel to Send it in.')
 @app_commands.describe(userid='ID of the User')
