@@ -25,8 +25,10 @@ def getFileExtensionType(fileBytes, url):
 
 
 # Returns true if the size of the file is under discords upload threshold for default servers
+# Old max file size limit was 8 MB (8388608 Bytes)
+# New max file size as of 4/10/23 for users & is now 25 MB (26214400 Bytes) [Size limit of 8MB was fixed here on 4/13/23: https://github.com/discord/discord-api-docs/issues/6058]
 def checkFileSize(Bytes):
-    return len(Bytes.content) <= 8388608
+    return len(Bytes.content) <= 26214400
 
 
 def translateBytesIntoKB(incomingBytes):
