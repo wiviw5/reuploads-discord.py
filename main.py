@@ -168,7 +168,7 @@ async def info(interaction: discord.Interaction, userid: str):
         userAvatarURL = discUser.avatar.url
         userBannerURL = adjustPictureSizeDiscord(discUser.banner.url, 1024)
 
-        await interaction.response.send_message(f"Showing Avatar & Banner of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`\n{userAvatarURL}\n {userBannerURL}", ephemeral=True, view=infoAvatarAndBanner(discUser.id))  # ephemeral means "locally" sent to client.
+        await interaction.response.send_message(f"Showing Avatar & Banner of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`\n{userAvatarURL}\n{userBannerURL}", ephemeral=True, view=infoAvatarAndBanner(discUser.id))  # ephemeral means "locally" sent to client.
 
 
 class infoAvatarAndBanner(discord.ui.View):
