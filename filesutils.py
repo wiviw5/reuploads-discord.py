@@ -54,6 +54,8 @@ def getFileName(filename, RB, spoiler, url):
 
 def getBasicFileName(filename, url):
     extension = url.split(".")[-1]
+    if "com/" in extension:
+        return f"{filename}"
     return f"{filename}.{extension}"
 
 
