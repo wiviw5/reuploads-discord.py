@@ -1,4 +1,6 @@
 import io
+import re
+
 import discord
 from discord import app_commands
 from utils import getTime, getBotKey, checkAndSetupConfigFile, getMainGuildID, getDefaultChannelID, getDeletePermsRoleID, getViewPermsRoleID, getAdminPermsRoleID, getOwnerID
@@ -48,6 +50,37 @@ async def createchannel(interaction: discord.Interaction, category: discord.Cate
         await interaction.response.send_message(f"Created <#{channel.id}> at {getTime()}", ephemeral=True)  # ephemeral means "locally" sent to client.
     else:
         await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
+
+
+@tree.command(guild=discord.Object(id=serverID), name='editmessage', description='Edits a message')
+@app_commands.describe(messagelink='The link to the message you would like to edit.')
+@app_commands.describe(newmessage='The edits you would like to perform to the message.')
+async def editmessage(interaction: discord.Interaction, messagelink: str, newmessage: str):
+    if ownerID != interaction.user.id:
+        await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
+        return
+    channelid = int(messagelink.split("/")[-2])
+    messageid = int(messagelink.split("/")[-1])
+    channel = await interaction.client.fetch_channel(channelid)
+    message = await channel.fetch_message(messageid)
+    await message.edit(content=newmessage.replace("\\n", chr(10)))
+    await interaction.response.send_message(f"I might have edited it, it might have errored, no clue lol.", ephemeral=True)
+
+
+@tree.command(guild=discord.Object(id=serverID), name='cleanmessage', description='Cleans a message')
+@app_commands.describe(messagelink='The link to the message you would like to clean.')
+async def cleanmessage(interaction: discord.Interaction, messagelink: str):
+    if ownerID != interaction.user.id:
+        await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
+        return
+    channelid = int(messagelink.split("/")[-2])
+    messageid = int(messagelink.split("/")[-1])
+    channel = await interaction.client.fetch_channel(channelid)
+    message = await channel.fetch_message(messageid)
+    cleanedfirstpartofmessagecontent = message.content.split("\n")[0].split(".")[0] + "`"
+    cleanedmessage = cleanedfirstpartofmessagecontent + re.sub(r'^.*?\n', ' \n', message.content)
+    await message.edit(content=cleanedmessage)
+    await interaction.response.send_message(f"I might have edited it, it might have errored, no clue lol.", ephemeral=True)
 
 
 @tree.command(guild=discord.Object(id=serverID), name='changeperms', description='Enables and Disables Certain Perms')
