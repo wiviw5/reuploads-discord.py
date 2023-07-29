@@ -222,12 +222,6 @@ async def info(interaction: discord.Interaction, userid: str):
         userInfo = f"`{discUser.name}` | `{discUser.global_name}`"
     else:
         userInfo = f"`{discUser.name}#{discUser.discriminator}`"
-    # TODO Work on phasing out the discriminators by only showing if they are not 0.
-    # print(f"Discord user: {discUser.id}")
-    # print(f"Discord discriminator: {discUser.discriminator}")
-    # print(f"Discord username: {discUser.name}")
-    # print(f"Discord Display name: {discUser.display_name}")
-    # print(f"Discord Global name: {discUser.global_name}")
     if discUser.banner is None:
         userAvatarURL = discUser.avatar.url
         await interaction.response.send_message(f"Showing Avatar of {userInfo} | {discUser.mention} | `{discUser.id}`\n{userAvatarURL}", ephemeral=True, view=infoAvatar(discUser.id))  # ephemeral means "locally" sent to client.
