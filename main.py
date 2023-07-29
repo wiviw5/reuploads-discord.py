@@ -82,6 +82,30 @@ async def cleanmessage(interaction: discord.Interaction, messagelink: str):
     await message.edit(content=cleanedmessage)
     await interaction.response.send_message(f"I might have edited it, it might have errored, no clue lol.", ephemeral=True)
 
+# TODO Needs further work.
+@tree.command(guild=discord.Object(id=serverID), name='getrawmessage', description='Replies with the raw text of a message.')
+@app_commands.describe(messagelink='The link to the message you would to get.')
+async def get_raw_message(interaction: discord.Interaction, messagelink: str):
+    if ownerID != interaction.user.id:
+        await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
+        return
+    channelid = int(messagelink.split("/")[-2])
+    messageid = int(messagelink.split("/")[-1])
+    channel = await interaction.client.fetch_channel(channelid)
+    message = await channel.fetch_message(messageid)
+    await interaction.response.send_message(f"Here is the message if the link was valid!", ephemeral=True)
+    await interaction.channel.send(content=message.content.replace(chr(10), "\\n"))
+
+
+@tree.command(guild=discord.Object(id=serverID), name='sendmessage', description='Replies with the raw text in a new message.')
+@app_commands.describe(text='Replies with the text you send into the bot.')
+async def send_message(interaction: discord.Interaction, text: str):
+    if ownerID != interaction.user.id:
+        await interaction.response.send_message(f"This is a Protected Command.", ephemeral=True)
+        return
+    await interaction.channel.send(content=text.replace("\\n", chr(10)))
+    await interaction.response.send_message(f"Likely sent new message.", ephemeral=True)
+
 
 @tree.command(guild=discord.Object(id=serverID), name='changeperms', description='Enables and Disables Certain Perms')
 @app_commands.describe(deleteperms='Delete Perms On/OFF')
@@ -194,13 +218,18 @@ async def info(interaction: discord.Interaction, userid: str):
     if discUser.avatar is None:
         await interaction.response.send_message(f"User has no avatar for `{discUser.id}`", ephemeral=True)
         return
+    # TODO Work on phasing out the discriminators by only showing if they are not 0.
+    # print(f"Discord user: {discUser.id}")
+    # print(f"Discord discriminator: {discUser.discriminator}")
+    # print(f"Discord username: {discUser.name}")
+    # print(f"Discord Display name: {discUser.display_name}")
+    # print(f"Discord Global name: {discUser.global_name}")
     if discUser.banner is None:
         userAvatarURL = discUser.avatar.url
         await interaction.response.send_message(f"Showing Avatar of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`\n{userAvatarURL}", ephemeral=True, view=infoAvatar(discUser.id))  # ephemeral means "locally" sent to client.
     else:
         userAvatarURL = discUser.avatar.url
         userBannerURL = adjustPictureSizeDiscord(discUser.banner.url, 1024)
-
         await interaction.response.send_message(f"Showing Avatar & Banner of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`\n{userAvatarURL}\n{userBannerURL}", ephemeral=True, view=infoAvatarAndBanner(discUser.id))  # ephemeral means "locally" sent to client.
 
 
