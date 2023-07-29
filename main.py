@@ -82,7 +82,7 @@ async def cleanmessage(interaction: discord.Interaction, messagelink: str):
     await message.edit(content=cleanedmessage)
     await interaction.response.send_message(f"I might have edited it, it might have errored, no clue lol.", ephemeral=True)
 
-# TODO Needs further work.
+
 @tree.command(guild=discord.Object(id=serverID), name='getrawmessage', description='Replies with the raw text of a message.')
 @app_commands.describe(messagelink='The link to the message you would to get.')
 async def get_raw_message(interaction: discord.Interaction, messagelink: str):
@@ -94,7 +94,7 @@ async def get_raw_message(interaction: discord.Interaction, messagelink: str):
     channel = await interaction.client.fetch_channel(channelid)
     message = await channel.fetch_message(messageid)
     await interaction.response.send_message(f"Here is the message if the link was valid!", ephemeral=True)
-    await interaction.channel.send(content=message.content.replace(chr(10), "\\n"))
+    await interaction.channel.send(content=message.content.replace(chr(10), "\\n"), view=deleteMessage())
 
 
 @tree.command(guild=discord.Object(id=serverID), name='sendmessage', description='Replies with the raw text in a new message.')
@@ -218,6 +218,10 @@ async def info(interaction: discord.Interaction, userid: str):
     if discUser.avatar is None:
         await interaction.response.send_message(f"User has no avatar for `{discUser.id}`", ephemeral=True)
         return
+    if discUser.discriminator == "0":
+        userInfo = f"`{discUser.name}` | `{discUser.global_name}`"
+    else:
+        userInfo = f"`{discUser.name}#{discUser.discriminator}`"
     # TODO Work on phasing out the discriminators by only showing if they are not 0.
     # print(f"Discord user: {discUser.id}")
     # print(f"Discord discriminator: {discUser.discriminator}")
@@ -226,11 +230,11 @@ async def info(interaction: discord.Interaction, userid: str):
     # print(f"Discord Global name: {discUser.global_name}")
     if discUser.banner is None:
         userAvatarURL = discUser.avatar.url
-        await interaction.response.send_message(f"Showing Avatar of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`\n{userAvatarURL}", ephemeral=True, view=infoAvatar(discUser.id))  # ephemeral means "locally" sent to client.
+        await interaction.response.send_message(f"Showing Avatar of {userInfo} | {discUser.mention} | `{discUser.id}`\n{userAvatarURL}", ephemeral=True, view=infoAvatar(discUser.id))  # ephemeral means "locally" sent to client.
     else:
         userAvatarURL = discUser.avatar.url
         userBannerURL = adjustPictureSizeDiscord(discUser.banner.url, 1024)
-        await interaction.response.send_message(f"Showing Avatar & Banner of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`\n{userAvatarURL}\n{userBannerURL}", ephemeral=True, view=infoAvatarAndBanner(discUser.id))  # ephemeral means "locally" sent to client.
+        await interaction.response.send_message(f"Showing Avatar & Banner of {userInfo} | {discUser.mention} | `{discUser.id}`\n{userAvatarURL}\n{userBannerURL}", ephemeral=True, view=infoAvatarAndBanner(discUser.id))  # ephemeral means "locally" sent to client.
 
 
 class infoAvatarAndBanner(discord.ui.View):
@@ -273,10 +277,23 @@ class infoAvatar(discord.ui.View):
         await interaction.response.send_message(f'Attached Hash for {self.userID}\nAvatar: `{getHashOfBytes(returnedBytes.content)}`', ephemeral=True)
 
 
+class deleteMessage(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+
+    @discord.ui.button(label='Delete', style=discord.ButtonStyle.danger)
+    async def avatar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(f'Deleting Message...', ephemeral=True)
+        await interaction.message.delete()
+
+
 async def sendAvatar(userID, channel, spoiler, source):
     discUser = await client.fetch_user(bot, int(userID))
     userAvatarURL = discUser.avatar.url
-    modifiedSource = f"Uploaded Avatar of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`"
+    if discUser.discriminator == "0":
+        modifiedSource = f"Uploaded Avatar of `{discUser.name}` | `{discUser.global_name}` | {discUser.mention} | `{discUser.id}`"
+    else:
+        modifiedSource = f"Uploaded Avatar of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`"
     if source is not None:
         modifiedSource = f"{modifiedSource}\n`{source}`"
     await sendFile(url=userAvatarURL, filename=discUser.id, channel=channel, spoiler=spoiler, source=modifiedSource)
@@ -285,7 +302,10 @@ async def sendAvatar(userID, channel, spoiler, source):
 async def sendBanner(userID, channel, spoiler, source):
     discUser = await client.fetch_user(bot, int(userID))
     userBannerURL = adjustPictureSizeDiscord(discUser.banner.url, 1024)
-    modifiedSource = f"Uploaded Banner of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`"
+    if discUser.discriminator == "0":
+        modifiedSource = f"Uploaded Banner of `{discUser.name}` | `{discUser.global_name}` | {discUser.mention} | `{discUser.id}`"
+    else:
+        modifiedSource = f"Uploaded Banner of `{discUser.name}#{discUser.discriminator}`| {discUser.mention} | `{discUser.id}`"
     if source is not None:
         modifiedSource = f"{modifiedSource}\n`{source}`"
     await sendFile(url=userBannerURL, filename=discUser.id, channel=channel, spoiler=spoiler, source=modifiedSource)
