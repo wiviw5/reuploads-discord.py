@@ -21,7 +21,7 @@ class client(discord.Client):
         if not self.synced:  # check if slash commands have been synced
             await tree.sync(guild=discord.Object(id=serverID))
             self.synced = True
-        print('Started at: ' + getTime())
+        print('Bot connected at: ' + getTime())
 
 
 bot = client()
