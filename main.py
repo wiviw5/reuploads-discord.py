@@ -3,8 +3,9 @@ import re
 
 import discord
 from discord import app_commands
-from utils import getTime, getBotKey, checkAndSetupConfigFile, getMainGuildID, getDefaultChannelID, getDeletePermsRoleID, getViewPermsRoleID, getAdminPermsRoleID, getOwnerID
-from filesutils import getBytesOfURL, checkFileSize, getFileSize, getFileName, adjustPictureSizeDiscord, getHashOfBytes, getBasicFileName
+from utils import getTime
+from configuration import getBotKey, checkAndSetupConfigFile, getMainGuildID, getDefaultChannelID, getDeletePermsRoleID, getViewPermsRoleID, getAdminPermsRoleID, getOwnerID
+from fileutils import getBytesOfURL, checkFileSize, getFileSize, getFileName, adjustPictureSizeDiscord, getHashOfBytes, getBasicFileName
 
 # Complete Startup Steps
 checkAndSetupConfigFile()
