@@ -1,7 +1,16 @@
 import httpx
 import hashlib
 
-
+# TODO In refactor, please replace this with a match statement and detecting based on the content-type header.
+# https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+# "text/plain" ".png"
+# "image/png" ".png"
+# "image/jpeg" ".jpg"
+# "image/gif" ".gif"
+# "image/webp" ".webp"
+# "video/mp4" ".mp4"
+# "video/webm" ".webm"
+# "video/quicktime" ".mov"
 def getFileExtensionType(fileBytes, url):
     if fileBytes.startswith(bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])):
         return '.png'
