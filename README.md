@@ -1,3 +1,5 @@
+This bot is older code, view https://github.com/wiviw5/CleverBot for "better" and "cleaner" code.
+
 # Reuploads Bot
 
 A Personal Discord Bot that Uploads files to discord channels and is able to save avatars, banners, and otherwise help out with managing server tasks.
